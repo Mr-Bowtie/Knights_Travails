@@ -10,6 +10,15 @@ class Board
       end
     end
   end
+
+  def possible_moves
+    moves = []
+    knight.moveset.each do |x, y|
+      new_position = [knight.position[0] + x, knight.position[1] + y]
+      moves << new_position if cells.include?(new_position)
+    end
+    moves
+  end
 end
 
 class Node
@@ -34,3 +43,7 @@ class Knight
     @@moveset
   end
 end
+
+knight = Knight.new([0, 0])
+chess_board = Board.new(knight)
+p chess_board.possible_moves
