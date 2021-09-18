@@ -52,11 +52,14 @@ class MoveTree
     value_list.each { |value| node.connected_nodes << Node.new(value) }
   end
 
-  def level_order
+  # returns the node whose position is the same as the value
+  # if no value is given return an array with all possible positions added in level order
+  def level_order_search(value = nil)
     position_array = []
     current_node = @root
     queue = [] << current_node
     until queue.empty?
+      return current_node if current_node.position == value
       current_node.connected_nodes.each { |node| queue << node }
       position_array << queue.shift.position
       current_node = queue[0]
@@ -84,7 +87,7 @@ def knight_moves(start)
 
   loop do
     possible_moves = chess_board.possible_single_step_moves
-    current_tree_values = move_tree.level_order
+    current_tree_values = move_tree.level_order_search
 
     for i in possible_moves
       next if current_tree_values.include?(i)
@@ -97,8 +100,9 @@ def knight_moves(start)
     break if queue.empty?
     knight.position = queue[0].position
   end
-  # p move_tree.level_order.sort
-  move_tree.print_connections
+  # p move_tree.level_order_search.sort
+  # move_tree.print_connections
+  p move_tree.level_order_search
 end
 
 knight_moves([3, 3])
