@@ -11,7 +11,7 @@ class Board
     end
   end
 
-  def possible_moves
+  def possible_single_step_moves
     moves = []
     knight.moveset.each do |x, y|
       new_position = [knight.position[0] + x, knight.position[1] + y]
@@ -33,17 +33,72 @@ end
 
 class Knight
   attr_accessor :position
-  @@moveset = [[-1, -2], [-2, -1], [-2, 1], [-1, 2], [1, 2], [2, 1], [2, -1], [1, -2]]
+  attr_reader :moveset
 
   def initialize(position)
     @position = position
-  end
-
-  def moveset
-    @@moveset
+    @moveset = [[-1, -2], [-2, -1], [-2, 1], [-1, 2], [1, 2], [2, 1], [2, -1], [1, -2]]
   end
 end
 
-knight = Knight.new([0, 0])
-chess_board = Board.new(knight)
-p chess_board.possible_moves
+class MoveTree
+  attr_accessor :root
+
+  def initialize(root)
+    @root = Node.new(root)
+  end
+
+  def connect(value_list, node = @root)
+    value_list.each { |value| node.connected_nodes << Node.new(value) }
+  end
+
+  def level_order
+    position_array = []
+    current_node = @root
+    queue = [] << current_node
+    until queue.empty?
+      current_node.connected_nodes.each { |node| queue << node }
+      position_array << queue.shift.position
+      current_node = queue[0]
+    end
+    position_array
+  end
+
+  def print_connections(node = @root)
+    return if node.connected_nodes.empty?
+    position_array = []
+    node.connected_nodes.each { |nd| position_array << nd.position }
+    puts "#{node.position} -> #{position_array}"
+
+    for i in node.connected_nodes
+      print_connections(i)
+    end
+  end
+end
+
+def knight_moves(start)
+  knight = Knight.new(start)
+  chess_board = Board.new(knight)
+  move_tree = MoveTree.new(knight.position)
+  queue = [] << move_tree.root
+
+  loop do
+    possible_moves = chess_board.possible_single_step_moves
+    current_tree_values = move_tree.level_order
+
+    for i in possible_moves
+      next if current_tree_values.include?(i)
+      node = Node.new(i)
+      queue << node
+      queue[0].connected_nodes << node
+      # return move_tree.print_connections if possible_moves.index(i) == 3
+    end
+    queue.shift
+    break if queue.empty?
+    knight.position = queue[0].position
+  end
+  # p move_tree.level_order.sort
+  move_tree.print_connections
+end
+
+knight_moves([3, 3])
