@@ -22,12 +22,13 @@ class Board
 end
 
 class Node
-  attr_accessor :connected_nodes
+  attr_accessor :children, :parent
   attr_reader :position
 
   def initialize(position)
     @position = position
-    @connected_nodes = []
+    @children = []
+    @parent = nil
   end
 end
 
@@ -48,8 +49,9 @@ class MoveTree
     @root = Node.new(root)
   end
 
-  def connect(value_list, node = @root)
-    value_list.each { |value| node.connected_nodes << Node.new(value) }
+  def connect(parent, child)
+    parent.children << child
+    child.parent = parent
   end
 
   # returns the node whose position is the same as the value
@@ -60,7 +62,7 @@ class MoveTree
     queue = [] << current_node
     until queue.empty?
       return current_node if current_node.position == value
-      current_node.connected_nodes.each { |node| queue << node }
+      current_node.children.each { |node| queue << node }
       position_array << queue.shift.position
       current_node = queue[0]
     end
@@ -68,18 +70,36 @@ class MoveTree
   end
 
   def print_connections(node = @root)
-    return if node.connected_nodes.empty?
+    return if node.children.empty?
     position_array = []
-    node.connected_nodes.each { |nd| position_array << nd.position }
+    node.children.each { |nd| position_array << nd.position }
     puts "#{node.position} -> #{position_array}"
 
-    for i in node.connected_nodes
+    for i in node.children
       print_connections(i)
+    end
+  end
+
+  def shortest_path(start, destination)
+    current_node = level_order_search(destination)
+    path = []
+    until current_node.position == start
+      path.unshift(current_node.position)
+      current_node = current_node.parent
+    end
+    path.unshift(start)
+  end
+
+  def display_shortest_path(start, destination)
+    path = shortest_path(start, destination)
+    puts "=: You made it in #{path.size - 1} moves! Here's your path:"
+    for step in path
+      p step
     end
   end
 end
 
-def knight_moves(start)
+def knight_moves(start, finish)
   knight = Knight.new(start)
   chess_board = Board.new(knight)
   move_tree = MoveTree.new(knight.position)
@@ -92,17 +112,19 @@ def knight_moves(start)
     for i in possible_moves
       next if current_tree_values.include?(i)
       node = Node.new(i)
+      move_tree.connect(queue[0], node)
       queue << node
-      queue[0].connected_nodes << node
+
       # return move_tree.print_connections if possible_moves.index(i) == 3
     end
     queue.shift
     break if queue.empty?
     knight.position = queue[0].position
   end
-  # p move_tree.level_order_search.sort
-  # move_tree.print_connections
-  p move_tree.level_order_search
+  move_tree.display_shortest_path(start, finish)
 end
 
-knight_moves([3, 3])
+knight_moves([0, 0], [1, 2])
+knight_moves([0, 0], [3, 3])
+knight_moves([3, 3], [0, 0])
+knight_moves([3, 3], [7, 7])
